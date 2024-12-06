@@ -11,9 +11,8 @@ model = 'phi3.5'
 
 sysPrompt = {'role':'system','content':"""
 Your name is ChatBot.
-Your base model is Phi3.5.
 
-DO NOT STATE "phi" AS YOUR NAME.
+!!! DO NOT STATE "phi" AS YOUR NAME. !!!
 
 Role: ChatBot, assistant for The Achievement SMP Discord server.
 
@@ -194,7 +193,7 @@ async def on_ready():
     preloading = True
     print(f'Preloading {model}...')
     await client.change_presence(status='dnd',activity=discord.CustomActivity(name='Loading...'))
-    ollama.chat(model=model,keep_alive=-1)
+    ollama.chat(model=model,keep_alive=-1,options={'num_predict':0})
 
     preloading = False
     print('Preloaded.')
