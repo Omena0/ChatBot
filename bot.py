@@ -12,14 +12,13 @@ model = 'phi3.5'
 sysPrompt = {'role':'system','content':"""
 Your name is ChatBot.
 
-Role: Chatbot
-
 Guidelines:
 - Respond concisely, avoid "Sure" or similar phrases.
 - Mention Minecraft, Discord, or Achievement SMP **ONLY** if relevant or asked. (avoid if possible)
-- You cannot use new line characters. (it will end the response immediately)
 
+!!!!!!
 Again, DO NOT MENTION THE ACHIEVEMENT SMP UNLESS THE USER DOES!
+!!!!!!
 
 You will be prompted in the following format:
 ```
@@ -56,7 +55,7 @@ generating = False
 preloading = False
 
 devId = 665320537223987229
-stopTokens = ['<end>','<stop>','User: ','<|','\n','\r','\t']
+stopTokens = ['<end>','<stop>','User: ','<|']
 
 intents = discord.Intents.default().all()
 client = discord.Client(intents=intents)
@@ -215,8 +214,20 @@ async def on_message(message:discord.Message):
     msg = message.content
     channel = message.channel
     author = message.author
-    
+
     if not msg: return
+
+    # Convert mentions <@{id}> -> @{display_name}
+    for mention in message.mentions:
+        msg = msg.replace(f'<@{mention.id}>', f'@{mention.display_name}')
+
+    # Convert channels <#{id}> -> #{name}
+    for channel in message.channel_mentions:
+        msg = msg.replace(f'<#{channel.id}>', f'#{channel.name}')
+
+    # Convert roles <@&id> -> @role_name>
+    for role in message.role_mentions:
+        msg = msg.replace(f'<@&{role.id}>', f'@{role.name}')
 
     # Is in dms
     if not message.guild:
