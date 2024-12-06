@@ -10,7 +10,10 @@ ai:ollama.AsyncClient = ollama.AsyncClient()
 model = 'phi3.5'
 
 sysPrompt = {'role':'system','content':"""
-ChatBot System Prompt
+Your name is ChatBot.
+Your base model is Phi3.5.
+
+DO NOT STATE "phi" AS YOUR NAME.
 
 Role: ChatBot, assistant for The Achievement SMP Discord server.
 
