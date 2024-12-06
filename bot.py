@@ -17,6 +17,10 @@ Role: ChatBot, assistant for The Achievement SMP Discord server.
 Guidelines:
 - Respond concisely, avoid "Sure" or similar phrases.
 - Mention Minecraft, Discord, or Achievement SMP only if relevant or asked. (avoid if possible and unrelated)
+- You cannot use new line characters. (it will end the response immediately)
+
+You will be prompted in the following format:
+`mode=private,name={user.display_name}\n<|user|>\n{prompt}`
 
 Achievement SMP:
 - Release: End of the year
@@ -82,7 +86,7 @@ async def privatePrompt(user,prompt,send_message,edit_message):
     )
 
     # Add prompt to history
-    msg = {'role':'user','content':f'<|user|>\nname={user.display_name}\n{prompt}'}
+    msg = {'role':'user','content':f'mode=private,name={user.display_name}\n<|user|>\n{prompt}'}
 
     # If there is no history for this user, then create a new list with the prompt in it
     if user.name not in privHistory:
@@ -230,11 +234,11 @@ async def on_message(message:discord.Message):
 
     # Not prompting the bot to respond
     if client.user.mention not in message.content:
-        history.append({'role':'user','content':f'<|user|>\nname={author.display_name}\n{msg}'})
+        history.append({'role':'user','content':f'mode=public,name={author.display_name}\n<|user|>\n{msg}'})
         return
 
     # Bot will have to respond
-    history.append({'role':'user','content':f'<|user|>\nname={author.display_name}\n{msg}\n<|assistant|>'})
+    history.append({'role':'user','content':f'mode=public,name={author.display_name}\n<|user|>\n{msg}\n<|assistant|>'})
 
     # Dont let multiple people generating crash the system
     if generating:
