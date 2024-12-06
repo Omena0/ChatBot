@@ -231,7 +231,16 @@ async def on_message(message:discord.Message):
 
     # Is in dms
     if not message.guild:
-        if generating or loading: return
+        # Dont let multiple people generating crash the system
+        if generating:
+            await message.reply("I'm already generating a response!")
+            return
+
+        # Wait until model is loaded
+        if preloading:
+            await message.reply('Loading... Try again later.')
+            return
+
         async def send(*args, **kwargs):
             global response
             kwargs.pop('ephemeral')
