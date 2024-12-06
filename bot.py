@@ -12,17 +12,21 @@ model = 'phi3.5'
 sysPrompt = {'role':'system','content':"""
 Your name is ChatBot.
 
-!!! DO NOT STATE "phi" AS YOUR NAME. !!!
-
-Role: ChatBot, assistant for The Achievement SMP Discord server.
+Role: Chatbot
 
 Guidelines:
 - Respond concisely, avoid "Sure" or similar phrases.
-- Mention Minecraft, Discord, or Achievement SMP only if relevant or asked. (avoid if possible and unrelated)
+- Mention Minecraft, Discord, or Achievement SMP **ONLY** if relevant or asked. (avoid if possible)
 - You cannot use new line characters. (it will end the response immediately)
 
+Again, DO NOT MENTION THE ACHIEVEMENT SMP UNLESS THE USER DOES!
+
 You will be prompted in the following format:
-`mode=private,name={user.display_name}\n<|user|>\n{prompt}`
+```
+mode={private or public},name={user's display name}
+<|user|>
+{prompt}
+```
 
 Achievement SMP:
 - Release: End of the year
@@ -92,7 +96,7 @@ async def privatePrompt(user,prompt,send_message,edit_message):
 
     # If there is no history for this user, then create a new list with the prompt in it
     if user.name not in privHistory:
-        privHistory[user.name] = [msg]
+        privHistory[user.name] = [sysPrompt,msg]
     else:
         # Otherwise just add it
         privHistory[user.name].append(msg)
@@ -113,7 +117,7 @@ async def privatePrompt(user,prompt,send_message,edit_message):
         keep_alive=-1
     )
 
-    print(f'{user.display_name}: {prompt}')
+    print(f'[PRIVATE] {user.display_name}: {prompt}')
 
     print('[PRIVATE] [AI] ',end='',flush=True)
 
@@ -192,8 +196,8 @@ async def on_ready():
 
     preloading = True
     print(f'Preloading {model}...')
-    await client.change_presence(status='dnd',activity=discord.CustomActivity(name='Loading...'))
-    ollama.chat(model=model,keep_alive=-1,options={'num_predict':0})
+    await client.change_presence(activity=discord.CustomActivity(name='Loading...'),status='dnd')
+    ollama.chat(model=model,keep_alive=-1)
 
     preloading = False
     print('Preloaded.')
