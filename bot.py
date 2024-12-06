@@ -1,14 +1,16 @@
 from discord import app_commands
 import discord
+import os, sys
 import ollama
-import os
+
+os.system('cls||clear')
 
 ai:ollama.AsyncClient = ollama.AsyncClient()
 
 model = 'phi3.5'
 
 sysPrompt = {'role':'system','content':"""
-Your name is ChatBot.
+!!! Your name is: ChatBot !!!
 
 You are a helpful assistant in Minecraft-related Discord server.
 Your responses DO NOT HAVE to be themed or related to Minecraft nor Discord.
@@ -93,11 +95,13 @@ DO NOT mention the Achievement SMP, Minecraft or Discord unless it seems relevan
 """.strip()}
 
 history = [sysPrompt]
+privHistory = {}
 
 generating = False
 preloading = False
 
 devId = 665320537223987229
+stopTokens = ['<end>','<stop>','User: ','<|','\n','\r','\t']
 
 intents = discord.Intents.default().all()
 client = discord.Client(intents=intents)
@@ -110,6 +114,13 @@ async def check_perms(interaction,message='You do not have permission to execute
         return False
     return True
 
+async def setGenerating(state):
+    global generating
+    generating = state
+    if state:
+        await client.change_presence(activity=discord.CustomActivity(name='Generating response...'))
+    else:
+        await client.change_presence(activity=discord.CustomActivity(name='Ready'))
 
 @tree.command(name="restart", description="Restart the bot", guild=guild)
 async def restart(interaction:discord.Interaction):
@@ -118,9 +129,8 @@ async def restart(interaction:discord.Interaction):
 
     print('restarting')
     await interaction.response.send_message('restarting...',ephemeral=True)
-    os.system(__file__)
+    os.execv(sys.executable, ['python'] + sys.argv)
     exit()
-
 
 @tree.command(name="wipe_memory", description="Give the bot dementia", guild=guild)
 async def wipe_memory(interaction:discord.Interaction):
@@ -133,15 +143,87 @@ async def wipe_memory(interaction:discord.Interaction):
     history = [sysPrompt]
 
 @tree.command(name="update", description="Update the bot to the latest version", guild=guild)
-async def wipe_memory(interaction:discord.Interaction):
+async def update(interaction:discord.Interaction):
     if not await check_perms(interaction):
         return
 
     print('updating')
-    await interaction.response.send_message('updating...',ephemeral=True)
-    await interaction.response.defer(ephemeral=True)
+    await interaction.response.send_message('Updating...',ephemeral=True, delete_after=5)
     os.system('git pull')
-    await restart(interaction)
+    os.execv(sys.executable, ['python'] + sys.argv)
+    exit()
+
+@tree.command(name='prompt',description='Privately prompt the AI',guild=guild)
+async def prompt(interaction:discord.Interaction, prompt:str):
+    if not await check_perms(interaction):
+        return
+
+    # Start generating
+    await setGenerating(True)
+
+    # Send response embed
+    await interaction.response.send_message(
+        embed=discord.Embed(
+            title='Response [V2]',
+            description='Generating...'
+        ),ephemeral=True
+    )
+
+    # Add prompt to history
+    user = interaction.user
+    msg = {'role':'user','content':f'<|user|>\nname={user.display_name}\n{prompt}'}
+
+    # If there is no history for this user, then create a new list with the prompt in it
+    if user.name not in privHistory:
+        privHistory[user.name] = [msg]
+    else:
+        # Otherwise just add it
+        privHistory[user.name].append(msg)
+
+    # Start generating tokens
+    response = await ai.chat(
+        model,
+        history,
+        stream=True,
+        options={
+            'num_predict': 150,
+            'temperature': 0.80,
+            'stop': stopTokens,
+            'num_ctx': 900,
+            'mirostat': 2.0,
+            'tfs_z': 2.5
+        },
+        keep_alive=-1
+    )
+
+    print(f'{user.display_name}: {prompt}')
+
+    print('[PRIVATE] [AI] ',end='',flush=True)
+
+    resp = ''
+    # Start outputting tokens (will throw if message deleted)
+    async for token in response:
+        token = token['message']['content']
+        resp += token
+        print(token,end='',flush=True)
+
+        try: await interaction.edit_original_response(embed=discord.Embed(title='Response [V2]', description=resp))
+        except: return
+
+    print('\n<end>\n')
+
+    # Add response to history
+    privHistory[user.name].append({'role':'assistant','content':f'{resp} <|end|>'})
+
+    # Clean up history
+    while len(privHistory[user.name]) > 49:
+        privHistory[user.name].pop(0)
+
+    privHistory[user.name].insert(0,sysPrompt)
+
+    # Stop generating
+    await setGenerating(False)
+
 
 @client.event
 async def on_ready():
@@ -163,6 +245,8 @@ async def on_ready():
 @client.event
 async def on_message(message:discord.Message):
     global generating
+
+    # Ignore messages sent by the bot
     if message.author == client.user:
         return
 
@@ -170,46 +254,55 @@ async def on_message(message:discord.Message):
     channel = message.channel
     author = message.author
 
+    # Make sure that everyone has permissions to the messages the bot sees
+    # Otherwise the bot could leak sensitive information
     if not channel.permissions_for(message.guild.get_role(1287014795303845919)).read_messages:
         return
 
     print(f'{author.display_name}: {msg}')
 
+    # Not prompting the bot to respond
     if client.user.mention not in message.content:
         history.append({'role':'user','content':f'<|user|>\nname={author.display_name}\n{msg}'})
         return
 
+    # Bot will have to respond
     history.append({'role':'user','content':f'<|user|>\nname={author.display_name}\n{msg}\n<|assistant|>'})
 
+    # Dont let multiple people generating crash the system
     if generating:
         await message.reply("I'm already generating a response!")
         return
 
+    # Wait until model is loaded
     if preloading:
         await message.reply('Loading... Try again later.')
         return
 
-    generating = True
-    await client.change_presence(activity=discord.CustomActivity(name='Generating response...'))
+    # Start generating tokens to gain 1 api request worth of response time
+    response = await ai.chat(
+        model,
+        history,
+        stream=True,
+        options={
+            'num_predict': 200,
+            'temperature': 0.75,
+            'stop': stopTokens,
+            'num_ctx': 1024,
+            'mirostat': 2.0,
+            'tfs_z': 2.0
+        },
+        keep_alive=-1
+    )
 
+    # Set generating
+    await setGenerating(True)
+
+    # Start typing and outputting tokens
     async with channel.typing():
-        response = await ai.chat(
-            model,
-            history,
-            stream=True,
-            options={
-                'num_predict': 100,
-                'temperature': 0.75,
-                'stop': ['<end>','<stop>','User: ','<|'],
-                'num_ctx': 1024,
-                'mirostat': 2.0,
-                'tfs_z': 2.0
-            },
-            keep_alive=-1
-        )
+        print('[AI] ',end='',flush=True)
 
-        print('[AI] ',end='')
-
+        # Send the response embed
         embed = discord.Embed(
             title='Response [V2.0]',
             description='(Generating...)'
@@ -218,27 +311,33 @@ async def on_message(message:discord.Message):
         responseMsg = await message.reply(embed=embed)
 
         resp = ''
+        # Iterate the tokens
         async for token in response:
             token = token['message']['content']
             resp += token
+
             print(token,end='',flush=True)
 
+            # Try to update the message (will throw if the message is deleted)
             try: await responseMsg.edit(embed=discord.Embed(title='Response [V2.0]',description=resp))
             except:
                 print('Response cancelled.')
                 return
 
-        print()
+        print('\n<end>\n')
 
+        # Add the assistant response to history
         history.append({'role':'assistant','content':f'{resp} <|end|>'})
 
-    while len(history) > 100:
+    # Remove some shit from history
+    while len(history) > 69:
         history.pop(0)
 
+    # Keep the system prompt tho
     history.insert(0,sysPrompt)
 
-    generating = False
-    await client.change_presence(activity=discord.CustomActivity(name='Ready'))
+    # Stop generating
+    await setGenerating(False)
 
 
 with open('token.txt') as f: token = f.read()
