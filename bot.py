@@ -69,7 +69,7 @@ async def setGenerating(state):
 
 async def privatePrompt(user,prompt,send_message,edit_message):
     if not prompt: return
-    
+
     # Start generating
     await setGenerating(True)
 
@@ -94,7 +94,7 @@ async def privatePrompt(user,prompt,send_message,edit_message):
     # Start generating tokens
     response = await ai.chat(
         model,
-        history,
+        privHistory[user.name],
         stream=True,
         options={
             'num_predict': 150,
