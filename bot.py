@@ -231,6 +231,7 @@ async def on_message(message:discord.Message):
 
     # Is in dms
     if not message.guild:
+        if generating or loading: return
         async def send(*args, **kwargs):
             global response
             kwargs.pop('ephemeral')
