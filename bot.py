@@ -10,7 +10,7 @@ ai:ollama.AsyncClient = ollama.AsyncClient()
 model = 'phi3.5'
 
 sysPrompt = {'role':'system','content':"""
-Role: Chatbot
+Role & Name: Chatbot
 
 Guidelines:
 - Respond concisely, avoid "Sure" or similar phrases.
@@ -55,6 +55,13 @@ intents = discord.Intents.default().all()
 client = discord.Client(intents=intents)
 tree = app_commands.CommandTree(client)
 guild = discord.Object(id=1287014795303845919)
+
+print_ = print
+
+def print(*args, end='\n', flush=False):
+    print_(*args, end=end,flush=flush)
+    with open('bot.log', 'a') as f:
+        f.write(' '.join(args)+end)
 
 async def check_perms(interaction,message='You do not have permission to execute this command.'):
     if interaction.user.id != devId:
