@@ -5,6 +5,8 @@ import ollama
 
 os.system('cls||clear')
 
+os.chdir('/home/omena0/bot')
+
 ai:ollama.AsyncClient = ollama.AsyncClient()
 
 model = 'phi3.5'
