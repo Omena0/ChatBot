@@ -58,8 +58,10 @@ client = discord.Client(intents=intents)
 tree = app_commands.CommandTree(client)
 guild = discord.Object(id=1287014795303845919)
 
-os.remove('bot.log')
-os.remove('../bot.log')
+try: os.remove('bot.log')
+except: ...
+try: os.remove('../bot.log')
+except: ...
 
 print_ = print
 
