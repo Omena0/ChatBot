@@ -177,9 +177,9 @@ async def update(interaction:discord.Interaction):
     if not await check_perms(interaction):
         return
 
+    os.system('git pull')
     print('updating')
     await interaction.response.send_message('Updating...',ephemeral=True, delete_after=5)
-    os.system('git pull')
     os.execv(sys.executable, ['python'] + sys.argv)
     exit()
 
