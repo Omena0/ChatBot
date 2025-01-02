@@ -60,8 +60,6 @@ guild = discord.Object(id=1287014795303845919)
 
 try: os.remove('bot.log')
 except: ...
-try: os.remove('../bot.log')
-except: ...
 
 print_ = print
 
