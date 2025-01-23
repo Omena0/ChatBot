@@ -14,6 +14,16 @@ ai:ollama.AsyncClient = ollama.AsyncClient()
 
 model = 'phi3.5'
 
+bio = """"
+<stats>
+
+The Achievement SMP's new AI ChatBot!
+
+Ping me and I will try to help you however I can!
+
+Join the discord: https://discord.gg/8MrQAhDdbM
+"""".strip()
+
 sysPrompt = {'role':'system','content':"""
 Role & Name: Chatbot
 
