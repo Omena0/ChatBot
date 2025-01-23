@@ -90,7 +90,7 @@ async def check_perms(interaction,message='You do not have permission to execute
 def save():
     json.dump(stats,open('stats.json','w'))
 
-async def setBio(bio):
+async def setBio():
     requests.patch(url="https://discord.com/api/v9/users/@me", headers= {"authorization": token}, json = {"bio": bio.replace('<stats>',f"""
 Messages seen: {stats['seen']}
 Total prompts: {stats['total']}
@@ -136,6 +136,7 @@ async def privatePrompt(user,prompt,send_message,edit_message):
     stats['total'] += 1
     stats['private'] += 1
     save()
+    setBio()
 
     # Start generating tokens
     response = await ai.chat(
@@ -246,6 +247,7 @@ async def on_ready():
     preloading = False
     print('Preloaded.')
     await client.change_presence(activity=discord.CustomActivity(name='Ready'))
+    setBio()
 
 
 @client.event
@@ -294,6 +296,7 @@ async def on_message(message:discord.Message):
 
     stats['seen'] += 1
     save()
+    setBio()
 
     print(f'{author.display_name}: {msg}')
 
@@ -321,6 +324,7 @@ async def on_message(message:discord.Message):
     stats['total'] += 1
     stats['public'] += 1
     save()
+    setBio()
 
     # Start generating tokens to gain 1 api request worth of response time
     response = await ai.chat(
