@@ -1,3 +1,5 @@
-total:90
-public:50
-private:40
+{
+    "total": 90,
+    "public": 50,
+    "private": 40
+}
