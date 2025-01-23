@@ -201,6 +201,21 @@ async def wipe_memory(interaction:discord.Interaction):
     history = []
     privHistory = {}
 
+@tree.command(name="show_log", description="View the bot's log remotely", guild=guild)
+async def get_log(interaction:discord.Interaction):
+    if not await check_perms(interaction):
+        return
+    
+    with open('bot.log') as f:
+        log = f.read()
+
+    await send_message(
+        embed=discord.Embed(
+            title='Bot log',
+            description=log
+        ), ephemeral=True
+    )
+
 @tree.command(name="update", description="Update the bot to the latest version", guild=guild)
 async def update(interaction:discord.Interaction):
     if not await check_perms(interaction):
