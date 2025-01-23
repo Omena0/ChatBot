@@ -2,6 +2,9 @@ from discord import app_commands
 import discord
 import os, sys
 import ollama
+import json
+
+stats = json.load(open('stats.json'))
 
 os.system('cls||clear')
 
@@ -74,11 +77,22 @@ async def check_perms(interaction,message='You do not have permission to execute
         return False
     return True
 
+def save():
+    json.dump(stats,open('stats.json','w'))
+
+async def setBio(bio):
+    requests.patch(url="https://discord.com/api/v9/users/@me", headers= {"authorization": token}, json = {"bio": bio.replace('<stats>',f"""
+Messages seen: {stats['seen']}
+Total prompts: {stats['total']}
+Public prompts: {stats['public']}
+Private prompts: {stats['private']}
+""".strip())
+
 async def setGenerating(state):
     global generating
     generating = state
     if state:
-        await client.change_presence(activity=discord.CustomActivity(name='Generating response...'))
+        await client.change_presence(activity=discord.CustomActivity(name=f'Generating...'))
     else:
         await client.change_presence(activity=discord.CustomActivity(name='Ready'))
 
@@ -108,6 +122,10 @@ async def privatePrompt(user,prompt,send_message,edit_message):
 
     history = privHistory[user.name].copy()
     history.insert(0, sysPrompt)
+
+    stats['total'] += 1
+    stats['private'] += 1
+    save()
 
     # Start generating tokens
     response = await ai.chat(
@@ -180,6 +198,7 @@ async def update(interaction:discord.Interaction):
     os.system('git pull')
     print('updating')
     await interaction.response.send_message('Updating...',ephemeral=True, delete_after=5)
+    t.sleep(10)
     os.execv(sys.executable, ['python'] + sys.argv)
     exit()
 
@@ -263,6 +282,9 @@ async def on_message(message:discord.Message):
     if not channel.permissions_for(message.guild.get_role(1287014795303845919)).read_messages:
         return
 
+    stats['seen'] += 1
+    save()
+
     print(f'{author.display_name}: {msg}')
 
     # Not prompting the bot to respond
@@ -285,6 +307,10 @@ async def on_message(message:discord.Message):
 
     h = history.copy()
     h.insert(0, sysPrompt)
+
+    stats['total'] += 1
+    stats['public'] += 1
+    save()
 
     # Start generating tokens to gain 1 api request worth of response time
     response = await ai.chat(
