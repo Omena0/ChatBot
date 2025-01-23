@@ -223,10 +223,7 @@ async def update(interaction:discord.Interaction):
 
     os.system('git pull')
     print('updating')
-    await interaction.response.send_message('Updating...',ephemeral=True, delete_after=5)
-    t.sleep(10)
-    os.execv(sys.executable, ['python'] + sys.argv)
-    exit()
+    await interaction.response.send_message('Updating bot...',ephemeral=True, delete_after=5)
 
 @tree.command(name='prompt',description='Privately prompt the AI', guild=guild)
 async def prompt(interaction:discord.Interaction, prompt:str):
