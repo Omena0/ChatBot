@@ -244,16 +244,6 @@ async def on_message(message:discord.Message):
     # Convert roles <@&id> -> @role_name>
     for role in message.role_mentions:
         msg = msg.replace(f'<@&{role.id}>', f'@{role.name}')
-
-    # Dont let multiple people generating crash the system
-    if generating:
-        await message.reply("I'm already generating a response!")
-        return
-    
-    # Wait until model is loaded
-    if preloading:
-        await message.reply('Loading... Try again later.')
-        return
     
     # Is in dms
     if not message.guild:
@@ -278,6 +268,16 @@ async def on_message(message:discord.Message):
     # Not prompting the bot to respond
     if client.user.mention not in message.content:
         history.append({'role':'user','content':f'mode=public,name={author.display_name}\n<|user|>\n{msg}\n<|end|>'})
+        return
+
+    # Dont let multiple people generating crash the system
+    if generating:
+        await message.reply("I'm already generating a response!")
+        return
+    
+    # Wait until model is loaded
+    if preloading:
+        await message.reply('Loading... Try again later.')
         return
 
     # Bot will have to respond
