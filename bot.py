@@ -228,7 +228,6 @@ async def update(interaction:discord.Interaction):
         return
 
     os.system('git pull')
-    os.system('python -m pip install -r requirements.txt')
     print('Updating bot...')
     await interaction.response.send_message('Pulling changes... (/reboot to restart)',ephemeral=True, delete_after=5)
 
