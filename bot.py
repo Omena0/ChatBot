@@ -14,7 +14,7 @@ except: os.chdir(f'{os.path.dirname(os.path.abspath(__file__))}')
 
 ai:ollama.AsyncClient = ollama.AsyncClient()
 
-model = 'llama3.1:8b-instruct-q8_0'#'phi3.5'
+model = 'phi3.5'
 
 bio = """
 The Achievement SMP's new AI ChatBot!
