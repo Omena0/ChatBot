@@ -1,28 +1,29 @@
 from discord import app_commands
-import requests
+import subprocess
 import discord
-import os, sys
 import ollama
 import json
+import os
 
 stats = json.load(open('stats.json'))
 
 os.system('cls||clear')
 
-os.chdir('/home/omena0/bot')
+try: os.chdir('/home/omena0/bot')
+except: os.chdir(f'{os.path.dirname(os.path.abspath(__file__))}')
 
 ai:ollama.AsyncClient = ollama.AsyncClient()
 
-model = 'phi3.5'
+model = 'llama3.1:8b-instruct-q8_0'#'phi3.5'
 
 bio = """
-<stats>
-
 The Achievement SMP's new AI ChatBot!
+Ping me and I'll try to help!
+Discord: https://discord.gg/8MrQAhDdbM
 
-Ping me and I will try to help you however I can!
-
-Join the discord: https://discord.gg/8MrQAhDdbM
+--- Statistics ---
+<stats>
+------------------
 """.strip()
 
 sysPrompt = {'role':'system','content':"""
@@ -72,6 +73,7 @@ client = discord.Client(intents=intents)
 tree = app_commands.CommandTree(client)
 guild = discord.Object(id=1287014795303845919)
 
+
 try: os.remove('bot.log')
 except: ...
 
@@ -91,19 +93,18 @@ async def check_perms(interaction,message='You do not have permission to execute
 def save():
     json.dump(stats,open('stats.json','w'))
 
-def setBio():
+async def setBio():
     global token
-    requests.patch(
-        url="https://discord.com/api/v9/users/@me",
-        headers={"authorization": token},
-        json={
-            "bio": bio.replace(
-                '<stats>',
-                f"""Messages seen: {stats['seen']}
-                    Total prompts: {stats['total']}
-                    Public prompts: {stats['public']}
-                    Private prompts: {stats['private']}
-                """.strip().replace('    ',''))})
+    await client.application.edit(
+        description=bio.replace(
+            '<stats>',
+            f"""Messages seen: {stats['seen']}
+                Prompts: {stats['total']}
+                Public: {stats['public']}
+                Private: {stats['private']}
+            """.strip().replace('    ','')
+        )
+    )
 
 async def setGenerating(state):
     global generating
@@ -143,7 +144,7 @@ async def privatePrompt(user,prompt,send_message,edit_message):
     stats['total'] += 1
     stats['private'] += 1
     save()
-    setBio()
+    await setBio()
 
     # Start generating tokens
     response = await ai.chat(
@@ -151,10 +152,10 @@ async def privatePrompt(user,prompt,send_message,edit_message):
         history,
         stream=True,
         options={
-            'num_predict': 150,
+            'num_predict': 160,
             'temperature': 0.65,
             'stop': stopTokens,
-            'num_ctx': 1500,
+            'num_ctx': 2000,
             'mirostat': 2.0,
             'tfs_z': 2.0
         },
@@ -186,6 +187,44 @@ async def privatePrompt(user,prompt,send_message,edit_message):
 
     # Stop generating
     await setGenerating(False)
+
+@tree.command(name='system', description='Execute a console command', guild=guild)
+async def system(interaction:discord.Interaction, command:str):
+    if not await check_perms(interaction):
+        return
+
+    print(f'Executing command: {command}')
+
+    output = subprocess.run(
+        command,
+        shell=True,
+        stderr=subprocess.STDOUT,
+        stdout=subprocess.PIPE,
+        text=True,
+        timeout=60
+    )
+
+    stdout = output.stdout or '<No output>'
+
+    if output.returncode != 0:
+        await interaction.response.send_message(
+            embed=discord.Embed(
+                title=f'Command exited with non-zero status code: {output.returncode}',
+                description=f'$ {command}\n\n{stdout}'
+            ),
+            ephemeral=True
+        )
+        print(f'Command exited with non-zero status code: {output.returncode}')
+        print(stdout)
+        return
+
+    await interaction.response.send_message(
+        embed=discord.Embed(
+            title='Command output',
+            description=f'$ {command}\n\n{stdout}'
+        ),
+        ephemeral=True
+    )
 
 @tree.command(name="reboot", description="Restart the bot", guild=guild)
 async def reboot(interaction:discord.Interaction):
@@ -265,7 +304,7 @@ async def on_ready():
     preloading = False
     print('Preloaded.')
     await client.change_presence(activity=discord.CustomActivity(name='Ready'))
-    setBio()
+    await setBio()
 
 
 @client.event
@@ -314,7 +353,7 @@ async def on_message(message:discord.Message):
 
     stats['seen'] += 1
     save()
-    setBio()
+    await setBio()
 
     print(f'{author.display_name}: {msg}')
 
@@ -342,7 +381,7 @@ async def on_message(message:discord.Message):
     stats['total'] += 1
     stats['public'] += 1
     save()
-    setBio()
+    await setBio()
 
     # Start generating tokens to gain 1 api request worth of response time
     response = await ai.chat(
@@ -353,7 +392,7 @@ async def on_message(message:discord.Message):
             'num_predict': 200,
             'temperature': 0.75,
             'stop': stopTokens,
-            'num_ctx': 1200,
+            'num_ctx': 2500,
             'mirostat': 2.0,
             'tfs_z': 2.0
         },
@@ -402,6 +441,6 @@ async def on_message(message:discord.Message):
     await setGenerating(False)
 
 
-with open('token.txt') as f: token = f.read()
+with open('token.txt', 'rt') as f: token = f.read()
 
 client.run(token)
