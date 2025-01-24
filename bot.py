@@ -91,7 +91,7 @@ async def check_perms(interaction,message='You do not have permission to execute
 def save():
     json.dump(stats,open('stats.json','w'))
 
-async def setBio():
+def setBio():
     global token
     requests.patch(
         url="https://discord.com/api/v9/users/@me",
