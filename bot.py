@@ -1,4 +1,5 @@
 from discord import app_commands
+import requests
 import discord
 import os, sys
 import ollama
@@ -14,7 +15,7 @@ ai:ollama.AsyncClient = ollama.AsyncClient()
 
 model = 'phi3.5'
 
-bio = """"
+bio = """
 <stats>
 
 The Achievement SMP's new AI ChatBot!
@@ -22,7 +23,7 @@ The Achievement SMP's new AI ChatBot!
 Ping me and I will try to help you however I can!
 
 Join the discord: https://discord.gg/8MrQAhDdbM
-"""".strip()
+""".strip()
 
 sysPrompt = {'role':'system','content':"""
 Role & Name: Chatbot
@@ -91,18 +92,24 @@ def save():
     json.dump(stats,open('stats.json','w'))
 
 async def setBio():
-    requests.patch(url="https://discord.com/api/v9/users/@me", headers= {"authorization": token}, json = {"bio": bio.replace('<stats>',f"""
-Messages seen: {stats['seen']}
-Total prompts: {stats['total']}
-Public prompts: {stats['public']}
-Private prompts: {stats['private']}
-""".strip())
+    global token
+    requests.patch(
+        url="https://discord.com/api/v9/users/@me",
+        headers={"authorization": token},
+        json={
+            "bio": bio.replace(
+                '<stats>',
+                f"""Messages seen: {stats['seen']}
+                    Total prompts: {stats['total']}
+                    Public prompts: {stats['public']}
+                    Private prompts: {stats['private']}
+                """.strip().replace('    ',''))})
 
 async def setGenerating(state):
     global generating
     generating = state
     if state:
-        await client.change_presence(activity=discord.CustomActivity(name=f'Generating...'))
+        await client.change_presence(activity=discord.CustomActivity(name='Generating...'))
     else:
         await client.change_presence(activity=discord.CustomActivity(name='Ready'))
 
@@ -180,15 +187,14 @@ async def privatePrompt(user,prompt,send_message,edit_message):
     # Stop generating
     await setGenerating(False)
 
-@tree.command(name="restart", description="Restart the bot", guild=guild)
-async def restart(interaction:discord.Interaction):
+@tree.command(name="reboot", description="Restart the bot", guild=guild)
+async def reboot(interaction:discord.Interaction):
     if not await check_perms(interaction):
         return
 
     print('restarting')
     await interaction.response.send_message('restarting...',ephemeral=True)
-    os.execv(sys.executable, ['python'] + sys.argv)
-    exit()
+    os.system('sudo reboot')
 
 @tree.command(name="wipe_memory", description="Give the bot dementia", guild=guild)
 async def wipe_memory(interaction:discord.Interaction):
@@ -205,11 +211,11 @@ async def wipe_memory(interaction:discord.Interaction):
 async def get_log(interaction:discord.Interaction):
     if not await check_perms(interaction):
         return
-    
+
     with open('bot.log') as f:
         log = f.read()
 
-    await send_message(
+    await interaction.response. send_message(
         embed=discord.Embed(
             title='Bot log',
             description=log
@@ -222,8 +228,9 @@ async def update(interaction:discord.Interaction):
         return
 
     os.system('git pull')
-    print('updating')
-    await interaction.response.send_message('Updating bot...',ephemeral=True, delete_after=5)
+    os.system('python -m pip install -r requirements.txt')
+    print('Updating bot...')
+    await interaction.response.send_message('Pulling changes... (/reboot to restart)',ephemeral=True, delete_after=5)
 
 @tree.command(name='prompt',description='Privately prompt the AI', guild=guild)
 async def prompt(interaction:discord.Interaction, prompt:str):
