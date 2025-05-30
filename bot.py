@@ -201,7 +201,7 @@ async def system(interaction:discord.Interaction, command:str):
         stderr=subprocess.STDOUT,
         stdout=subprocess.PIPE,
         text=True,
-        timeout=60
+        timeout=10
     )
 
     stdout = output.stdout or '<No output>'

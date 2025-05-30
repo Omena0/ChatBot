@@ -93,3 +93,7 @@ fatal: /system: '/system' is outside repository at 'D:/GitHub/ChatBot'
 
 Executing command: git commit -m "Add /system and fix everything"
 Executing command: git push
+Owner | Omena0: @AI | ChatBot  who am i
+[AI] You are the Owner, specifically Omena0
+<end>
+
