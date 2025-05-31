@@ -1,0 +1,56 @@
+[
+  {
+    "config_name": "Default",
+    "generation_time": 29.26567530632019,
+    "tokens_generated": 201,
+    "tokens_per_second": 6.868114195082053,
+    "context_size": 549,
+    "prompt_type": "default",
+    "timestamp": 1748693317.4435823
+  },
+  {
+    "config_name": "Optimized",
+    "generation_time": 10.559800148010254,
+    "tokens_generated": 201,
+    "tokens_per_second": 19.03445114327033,
+    "context_size": 549,
+    "prompt_type": "optimized",
+    "timestamp": 1748693328.0035484
+  },
+  {
+    "config_name": "Topic-Focused",
+    "generation_time": 25.41651701927185,
+    "tokens_generated": 201,
+    "tokens_per_second": 7.908243283200193,
+    "context_size": 411,
+    "prompt_type": "focused",
+    "timestamp": 1748693353.4231017
+  },
+  {
+    "config_name": "Context-Optimized",
+    "generation_time": 31.388285875320435,
+    "tokens_generated": 201,
+    "tokens_per_second": 6.403662844107063,
+    "context_size": 549,
+    "prompt_type": "optimized",
+    "timestamp": 1748693384.8143156
+  },
+  {
+    "config_name": "Low Temperature",
+    "generation_time": 11.952355146408081,
+    "tokens_generated": 201,
+    "tokens_per_second": 16.816769376234983,
+    "context_size": 549,
+    "prompt_type": "optimized",
+    "timestamp": 1748693396.770118
+  },
+  {
+    "config_name": "Mirostat Enabled",
+    "generation_time": 11.859760046005249,
+    "tokens_generated": 201,
+    "tokens_per_second": 16.94806633694948,
+    "context_size": 549,
+    "prompt_type": "optimized",
+    "timestamp": 1748693408.632835
+  }
+]

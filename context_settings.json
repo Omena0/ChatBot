@@ -1,0 +1,1 @@
+{"max_tokens": 1000, "remove_thinking": true, "recency_weight": 0.6, "relevance_weight": 0.4}
